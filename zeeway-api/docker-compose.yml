@@ -1,0 +1,64 @@
+version: '2.0'
+services:
+ 
+  #PHP Service
+  zeeway_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cloudsigma.com/php
+    container_name: zeeway_api
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: zeeway_api
+      SERVICE_TAGS: dev
+    working_dir: /var/www/html/
+    volumes:
+      - ./:/var/www/html/
+      - ./php/laravel.ini:/usr/local/etc/php/conf.d/laravel.ini
+    networks:
+      - app-network
+ 
+  #Nginx Service
+  zeeway_webserver:
+    image: nginx:alpine
+    container_name: zeeway_webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www/html/
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+ 
+  #MySQL Service
+  zeeway_db:
+    image: mysql:8.4
+    container_name: zeeway_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: zeeway_api
+      MYSQL_ROOT_PASSWORD: zeeway_api
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - zeeway_dbdata:/var/lib/mysql/
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - app-network
+ 
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+#Volumes
+volumes:
+  zeeway_dbdata:
+    driver: local
